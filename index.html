@@ -4,28 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Snake Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0f1420;
-    --panel: #161c2c;
+    --bg: #0a0e18;
+    --panel: #171e30;
+    --panel-2: #1c2438;
     --board: #1a2032;
-    --grid-line: rgba(255, 255, 255, 0.035);
-    --border: #3a4160;
+    --border: #323a56;
     --accent: #4a7bff;
+    --accent-2: #8f6bff;
     --accent-hover: #3a63e0;
     --head: #8ef0a3;
-    --body-a: #4a9dff;
-    --body-b: #3d7fe0;
     --food: #ff5a6e;
-    --text: #e6e9f0;
+    --text: #eef0f6;
     --muted: #8892b0;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     height: 100%;
-    background: var(--bg);
   }
   body {
     min-height: 100vh;
@@ -33,13 +34,51 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 18px;
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    padding: 16px;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    padding: 24px 16px;
     -webkit-tap-highlight-color: transparent;
     touch-action: none;
     user-select: none;
+    position: relative;
+    overflow-x: hidden;
+    background: var(--bg);
+    isolation: isolate;
+  }
+  body::before, body::after {
+    content: "";
+    position: fixed;
+    width: 55vmax;
+    height: 55vmax;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.16;
+    z-index: -1;
+    pointer-events: none;
+  }
+  body::before {
+    background: var(--accent);
+    top: -20vmax;
+    left: -15vmax;
+  }
+  body::after {
+    background: var(--accent-2);
+    bottom: -22vmax;
+    right: -15vmax;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px 28px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+    max-width: 100%;
   }
 
   .title {
@@ -55,63 +94,76 @@
   }
   h1 {
     margin: 0;
-    font-size: 1.6em;
-    letter-spacing: 4px;
-    font-weight: 800;
+    font-family: "Space Grotesk", "Inter", sans-serif;
+    font-size: 1.7em;
+    letter-spacing: 5px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #eef0f6, #aebbf5);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .hud {
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
     font-variant-numeric: tabular-nums;
   }
   .pill {
-    background: var(--panel);
+    background: rgba(255,255,255,0.03);
     border: 1px solid var(--border);
     border-radius: 999px;
     padding: 6px 16px;
-    font-size: 0.95em;
+    font-size: 0.9em;
     display: flex;
     gap: 6px;
     align-items: baseline;
+    white-space: nowrap;
   }
-  .pill .label { color: var(--muted); font-size: 0.8em; }
-  .pill .value { font-weight: 700; transition: transform 0.15s ease; }
-  .pill .value.bump { transform: scale(1.35); }
+  .pill .label { color: var(--muted); font-size: 0.78em; letter-spacing: 0.5px; }
+  .pill .value { font-weight: 700; font-family: "Space Grotesk", sans-serif; transition: transform 0.15s ease; }
+  .pill .value.bump { transform: scale(1.35); color: var(--head); }
   button.pill {
     font: inherit;
     color: inherit;
     line-height: 1;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  button.pill:hover { border-color: var(--accent); }
+  button.pill:hover { border-color: var(--accent); background: rgba(74,123,255,0.1); }
+  button.pill:active { transform: scale(0.94); }
 
   .board-wrap {
     position: relative;
     line-height: 0;
+    border-radius: 14px;
   }
   canvas {
     background: var(--board);
     border: 2px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 0 40px rgba(80, 120, 255, 0.12), 0 10px 30px rgba(0,0,0,0.4);
-    max-width: 90vw;
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 0 40px rgba(80, 120, 255, 0.15), 0 15px 35px rgba(0,0,0,0.5);
+    max-width: min(90vw, 420px);
     max-height: 60vh;
     width: 400px;
     height: 400px;
     display: block;
+    aspect-ratio: 1 / 1;
   }
 
   #hint {
-    font-size: 0.85em;
+    font-size: 0.82em;
     color: var(--muted);
     text-align: center;
   }
   #hint kbd {
-    background: var(--panel);
+    background: rgba(255,255,255,0.05);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 1px 6px;
+    padding: 1px 7px;
     font-family: inherit;
+    font-size: 0.95em;
   }
 
   #overlay {
@@ -121,22 +173,25 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    background: rgba(10, 12, 20, 0.82);
-    backdrop-filter: blur(2px);
+    background: rgba(8, 10, 18, 0.88);
+    backdrop-filter: blur(3px);
     gap: 14px;
-    border-radius: 10px;
+    border-radius: 12px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
+    transform: scale(0.98);
+    transition: opacity 0.2s ease, transform 0.2s ease;
     text-align: center;
     padding: 20px;
   }
   #overlay.show {
     opacity: 1;
     pointer-events: auto;
+    transform: scale(1);
   }
   #overlayText {
-    font-size: 1.4em;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.5em;
     font-weight: 700;
   }
   #overlaySub {
@@ -145,35 +200,37 @@
     margin-top: -8px;
   }
   #overlay button {
-    padding: 10px 28px;
+    padding: 11px 32px;
     font-size: 1em;
     font-weight: 600;
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease;
+    box-shadow: 0 8px 20px rgba(74,123,255,0.35);
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
   }
-  #overlay button:hover { background: var(--accent-hover); }
+  #overlay button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(74,123,255,0.45); }
   #overlay button:active { transform: scale(0.96); }
 
   .touch-controls {
     display: none;
-    grid-template-columns: repeat(3, 56px);
-    grid-template-rows: repeat(2, 56px);
+    grid-template-columns: repeat(3, 58px);
+    grid-template-rows: repeat(2, 58px);
     gap: 8px;
     margin-top: 4px;
   }
   .touch-controls button {
-    background: var(--panel);
+    background: rgba(255,255,255,0.04);
     border: 1px solid var(--border);
     color: var(--text);
-    border-radius: 10px;
-    font-size: 1.3em;
+    border-radius: 12px;
+    font-size: 1.4em;
     cursor: pointer;
+    transition: background 0.1s ease, transform 0.1s ease;
   }
-  .touch-controls button:active { background: var(--accent); }
+  .touch-controls button:active { background: var(--accent); transform: scale(0.92); }
   .tc-up { grid-column: 2; grid-row: 1; }
   .tc-left { grid-column: 1; grid-row: 2; }
   .tc-down { grid-column: 2; grid-row: 2; }
@@ -184,6 +241,11 @@
     #hint { display: none; }
   }
 
+  @media (max-width: 420px) {
+    .card { padding: 18px 14px 22px; border-radius: 16px; }
+    h1 { font-size: 1.4em; letter-spacing: 3px; }
+  }
+
   @keyframes flash {
     0% { filter: brightness(2.2); }
     100% { filter: brightness(1); }
@@ -192,36 +254,38 @@
 </style>
 </head>
 <body>
-  <div class="title">
-    <span class="dot"></span>
-    <h1>SNAKE</h1>
-  </div>
-
-  <div class="hud">
-    <div class="pill"><span class="label">SCORE</span><span class="value" id="scoreVal">0</span></div>
-    <div class="pill"><span class="label">BEST</span><span class="value" id="bestVal">0</span></div>
-    <div class="pill"><span class="label">LVL</span><span class="value" id="levelVal">1</span></div>
-    <button id="muteBtn" class="pill" style="cursor:pointer;">🔊</button>
-  </div>
-
-  <div class="board-wrap">
-    <canvas id="game" width="400" height="400"></canvas>
-    <div id="overlay" class="show">
-      <div id="overlayText">Snake</div>
-      <div id="overlaySub">Press any key or tap to start</div>
-      <button id="restartBtn">Play</button>
+  <div class="card">
+    <div class="title">
+      <span class="dot"></span>
+      <h1>SNAKE</h1>
     </div>
-  </div>
 
-  <div id="hint">
-    <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> or <kbd>WASD</kbd> to move &middot; <kbd>Space</kbd> to pause
-  </div>
+    <div class="hud">
+      <div class="pill"><span class="label">SCORE</span><span class="value" id="scoreVal">0</span></div>
+      <div class="pill"><span class="label">BEST</span><span class="value" id="bestVal">0</span></div>
+      <div class="pill"><span class="label">LVL</span><span class="value" id="levelVal">1</span></div>
+      <button id="muteBtn" class="pill" style="cursor:pointer;">🔊</button>
+    </div>
 
-  <div class="touch-controls">
-    <button class="tc-up" data-dir="up">&uarr;</button>
-    <button class="tc-left" data-dir="left">&larr;</button>
-    <button class="tc-down" data-dir="down">&darr;</button>
-    <button class="tc-right" data-dir="right">&rarr;</button>
+    <div class="board-wrap">
+      <canvas id="game" width="400" height="400"></canvas>
+      <div id="overlay" class="show">
+        <div id="overlayText">Snake</div>
+        <div id="overlaySub">Press any key or tap to start</div>
+        <button id="restartBtn">Play</button>
+      </div>
+    </div>
+
+    <div id="hint">
+      <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> or <kbd>WASD</kbd> to move &middot; <kbd>Space</kbd> to pause
+    </div>
+
+    <div class="touch-controls">
+      <button class="tc-up" data-dir="up">&uarr;</button>
+      <button class="tc-left" data-dir="left">&larr;</button>
+      <button class="tc-down" data-dir="down">&darr;</button>
+      <button class="tc-right" data-dir="right">&rarr;</button>
+    </div>
   </div>
 
 <script>
